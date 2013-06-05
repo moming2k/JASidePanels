@@ -501,6 +501,7 @@ static char ja_kvoContext;
         
         if (pan.state == UIGestureRecognizerStateBegan) {
             if (self.state == JASidePanelCenterVisible) {
+                [self.centerPanel beginAppearanceTransition:NO animated:YES];
                 if (frame.origin.x > 0.0f) {
                     self.leftPanelAnimating = YES;
                     [self.leftPanel beginAppearanceTransition:YES animated:YES];
@@ -511,9 +512,11 @@ static char ja_kvoContext;
             } else if(self.state == JASidePanelLeftVisible) {
                 self.leftPanelAnimating = YES;
                 [self.leftPanel beginAppearanceTransition:NO animated:YES];
+                [self.centerPanel beginAppearanceTransition:YES animated:YES];
             } else {
                 self.rightPanelAnimating = YES;
                 [self.rightPanel beginAppearanceTransition:NO animated:YES];
+                [self.centerPanel beginAppearanceTransition:YES animated:YES];
             }
         }
         
@@ -535,9 +538,13 @@ static char ja_kvoContext;
                 }
             }
             if(self.state == JASidePanelLeftVisible) {
+                [self.centerPanel endAppearanceTransition];
+                [self.centerPanel beginAppearanceTransition:NO animated:YES];
                 [self.leftPanel endAppearanceTransition];
                 [self.leftPanel beginAppearanceTransition:YES animated:YES];
             } else if(self.state == JASidePanelCenterVisible) {
+                [self.centerPanel endAppearanceTransition];
+                [self.centerPanel beginAppearanceTransition:YES animated:YES];
                 if(self.leftPanelAnimating) {
                     [self.leftPanel endAppearanceTransition];
                     [self.leftPanel beginAppearanceTransition:NO animated:YES];
@@ -546,6 +553,8 @@ static char ja_kvoContext;
                     [self.rightPanel beginAppearanceTransition:NO animated:YES];
                 }
             } else {
+                [self.centerPanel endAppearanceTransition];
+                [self.centerPanel beginAppearanceTransition:NO animated:YES];
                 [self.rightPanel endAppearanceTransition];
                 [self.rightPanel beginAppearanceTransition:YES animated:YES];
             }
@@ -851,10 +860,12 @@ static char ja_kvoContext;
     if(automatic) {
         self.leftPanelAnimating = YES;
         [self.leftPanel beginAppearanceTransition:YES animated:animated];
+        [self.centerPanel beginAppearanceTransition:NO animated:animated];
     }
     
     if (animated) {
         [self _animateCenterPanel:shouldBounce completion:^(BOOL finished) {
+            [self.centerPanel endAppearanceTransition];
             [self.leftPanel endAppearanceTransition];
             self.leftPanelAnimating = NO;
         }];
@@ -881,10 +892,12 @@ static char ja_kvoContext;
     if(automatic) {
         self.rightPanelAnimating = YES;
         [self.rightPanel beginAppearanceTransition:YES animated:animated];
+        [self.centerPanel beginAppearanceTransition:NO animated:animated];
     }
     
     if (animated) {
         [self _animateCenterPanel:shouldBounce completion:^(BOOL finished) {
+            [self.centerPanel endAppearanceTransition];
             [self.rightPanel endAppearanceTransition];
             self.rightPanelAnimating = NO;
         }];
@@ -904,6 +917,7 @@ static char ja_kvoContext;
 
 - (void)_showCenterPanel:(BOOL)animated bounce:(BOOL)shouldBounce automatic:(BOOL)automatic {
     if(automatic) {
+        [self.centerPanel beginAppearanceTransition:YES animated:animated];
         if(self.state == JASidePanelLeftVisible) {
             self.leftPanelAnimating = YES;
             [self.leftPanel beginAppearanceTransition:NO animated:animated];
@@ -918,6 +932,8 @@ static char ja_kvoContext;
     
     if (animated) {
         [self _animateCenterPanel:shouldBounce completion:^(__unused BOOL finished) {
+            [self.centerPanel endAppearanceTransition];
+            
             if(self.leftPanelAnimating) {
                 [self.leftPanel endAppearanceTransition];
                 self.leftPanelAnimating = NO;
