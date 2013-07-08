@@ -150,6 +150,12 @@ typedef enum _JASidePanelState {
 // Current state of panels. Use KVO to monitor state changes
 @property (nonatomic, readonly) JASidePanelState state;
 
+// Animating state of left panel
+@property (nonatomic, assign, readonly) BOOL leftPanelAnimating;
+
+// Animating state of right panel
+@property (nonatomic, assign, readonly) BOOL rightPanelAnimating;
+
 // Whether or not the center panel is completely hidden
 @property (nonatomic, assign) BOOL centerPanelHidden;
 
