@@ -212,7 +212,7 @@ static char ja_kvoContext;
     }
 }
 
-#else
+#endif
 
 - (BOOL)shouldAutorotate {
     __strong UIViewController *visiblePanel = self.visiblePanel;
@@ -223,9 +223,6 @@ static char ja_kvoContext;
         return YES;
     }
 }
-
-
-#endif
 
 - (void)willAnimateRotationToInterfaceOrientation:(__unused UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration {
     self.centerPanelContainer.frame = [self _adjustCenterFrame];	
@@ -349,6 +346,10 @@ static char ja_kvoContext;
 #pragma mark - Panels
 
 - (void)setCenterPanel:(UIViewController *)centerPanel {
+    [self setCenterPanel:centerPanel completion:nil];
+}
+
+- (void)setCenterPanel:(UIViewController *)centerPanel completion:(void (^)(BOOL finished))completion {
     UIViewController *previous = _centerPanel;
     if (centerPanel != _centerPanel) {
         [_centerPanel removeObserver:self forKeyPath:@"view"];
@@ -375,7 +376,7 @@ static char ja_kvoContext;
             self.centerPanelContainer.frame = _centerPanelRestingFrame;
         } completion:^(__unused BOOL finished) {
             [self _swapCenter:previous previousState:previousState with:_centerPanel];
-            [self _showCenterPanel:YES bounce:NO];
+            [self _showCenterPanel:YES bounce:YES completion:completion];
         }];
     }
 }
@@ -591,7 +592,7 @@ static char ja_kvoContext;
 }
 
 - (void)_centerPanelTapped:(__unused UIGestureRecognizer *)gesture {
-    [self _showCenterPanel:YES bounce:NO];
+    [self _showCenterPanel:YES bounce:YES];
 }
 
 #pragma mark - Internal Methods
@@ -821,18 +822,26 @@ static char ja_kvoContext;
 #pragma mark - Showing Panels
 
 - (void)_showLeftPanel:(BOOL)animated bounce:(BOOL)shouldBounce {
+    
     self.state = JASidePanelLeftVisible;
     [self _loadLeftPanel];
     
     [self _adjustCenterFrame];
     
     if (animated) {
-        [self _animateCenterPanel:shouldBounce completion:nil];
+        [self _animateCenterPanel:shouldBounce completion:^(BOOL finished) {
+            if (self.analyticsDelegate) {
+                [self.analyticsDelegate trackMenuOpen];
+            }
+        }];
     } else {
         self.centerPanelContainer.frame = _centerPanelRestingFrame;	
         [self styleContainer:self.centerPanelContainer animate:NO duration:0.0f];
         if (self.style == JASidePanelMultipleActive || self.pushesSidePanels) {
             [self _layoutSideContainers:NO duration:0.0f];
+        }
+        if (self.analyticsDelegate) {
+            [self.analyticsDelegate trackMenuOpen];
         }
     }
     
@@ -865,6 +874,11 @@ static char ja_kvoContext;
 }
 
 - (void)_showCenterPanel:(BOOL)animated bounce:(BOOL)shouldBounce {
+    [self _showCenterPanel:animated bounce:shouldBounce completion:nil];
+}
+
+- (void)_showCenterPanel:(BOOL)animated bounce:(BOOL)shouldBounce completion:(void (^)(BOOL finished))completion {
+    
     self.state = JASidePanelCenterVisible;
     
     [self _adjustCenterFrame];
@@ -874,6 +888,12 @@ static char ja_kvoContext;
             self.leftPanelContainer.hidden = YES;
             self.rightPanelContainer.hidden = YES;
             [self _unloadPanels];
+            if (completion) {
+                completion(finished);
+            }
+            if (self.analyticsDelegate) {
+                [self.analyticsDelegate trackMenuClose];
+            }
         }];
     } else {
         self.centerPanelContainer.frame = _centerPanelRestingFrame;	
@@ -884,6 +904,9 @@ static char ja_kvoContext;
         self.leftPanelContainer.hidden = YES;
         self.rightPanelContainer.hidden = YES;
         [self _unloadPanels];
+        if (self.analyticsDelegate) {
+            [self.analyticsDelegate trackMenuClose];
+        }
     }
     
     self.tapView = nil;
@@ -985,9 +1008,9 @@ static char ja_kvoContext;
 
 - (void)toggleLeftPanel:(__unused id)sender {
     if (self.state == JASidePanelLeftVisible) {
-        [self _showCenterPanel:YES bounce:NO];
+        [self _showCenterPanel:YES bounce:YES];
     } else if (self.state == JASidePanelCenterVisible) {
-        [self _showLeftPanel:YES bounce:NO];
+        [self _showLeftPanel:YES bounce:YES];
     }
 }
 
